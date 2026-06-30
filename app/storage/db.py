@@ -51,8 +51,21 @@ CREATE TABLE IF NOT EXISTS wiki_pages (
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS wiki_fts USING fts5(
-    title, body, tags, content='wiki_pages', content_rowid='rowid'
+    title, body, tags
 );
+
+CREATE TRIGGER IF NOT EXISTS wiki_ai AFTER INSERT ON wiki_pages BEGIN
+    INSERT INTO wiki_fts(rowid, title, body, tags)
+    VALUES (new.rowid, new.title, new.body, COALESCE(new.tags, ''));
+END;
+CREATE TRIGGER IF NOT EXISTS wiki_ad AFTER DELETE ON wiki_pages BEGIN
+    DELETE FROM wiki_fts WHERE rowid = old.rowid;
+END;
+CREATE TRIGGER IF NOT EXISTS wiki_au AFTER UPDATE ON wiki_pages BEGIN
+    DELETE FROM wiki_fts WHERE rowid = old.rowid;
+    INSERT INTO wiki_fts(rowid, title, body, tags)
+    VALUES (new.rowid, new.title, new.body, COALESCE(new.tags, ''));
+END;
 
 CREATE TABLE IF NOT EXISTS evolution_population (
     id            TEXT PRIMARY KEY,
