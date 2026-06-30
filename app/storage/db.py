@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS runs (
     objective     TEXT,
     constraints   TEXT,
     status        TEXT NOT NULL DEFAULT 'queued',
-    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
+    updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
     config        TEXT
 );
 
@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS agents (
     input         TEXT,
     output        TEXT,
     error         TEXT,
-    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
+    updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now'))
 );
 
 CREATE TABLE IF NOT EXISTS metrics (
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS metrics (
     agent_id      TEXT,
     name          TEXT NOT NULL,
     value         REAL NOT NULL,
-    recorded_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    recorded_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now'))
 );
 
 CREATE TABLE IF NOT EXISTS wiki_pages (
@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS wiki_pages (
     tags          TEXT,
     source        TEXT,
     run_id        TEXT REFERENCES runs(id) ON DELETE SET NULL,
-    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
+    updated_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now'))
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS wiki_fts USING fts5(
