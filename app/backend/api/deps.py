@@ -66,7 +66,9 @@ def _build(
     if static:
         from fastapi.staticfiles import StaticFiles
 
-        dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+        # app/backend/api/deps.py -> parents[3] is project root
+        project_root = Path(__file__).resolve().parents[3]
+        dist = project_root / "frontend" / "dist"
         if dist.exists():
             app.mount("/", StaticFiles(directory=str(dist), html=True), name="ui")
     return app

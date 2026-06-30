@@ -7,7 +7,7 @@ from app.backend.api.deps import create_default_app
 
 
 def main() -> None:
-    uvicorn.run(create_default_app(), host="127.0.0.1", port=8000, factory=True)
+    uvicorn.run("app.backend.api.deps:create_default_app", host="127.0.0.1", port=8000, factory=True)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/api.ts","./src/main.tsx","./src/panes/evolutionpane.tsx","./src/panes/livestrip.tsx","./src/panes/runspane.tsx","./src/panes/wikipane.tsx"],"version":"5.9.3"}
