@@ -47,7 +47,13 @@ class JobQueue:
     def start(self) -> None:
         if self._started:
             return
-        self._loop = asyncio.get_event_loop()
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop: defer until submit().
+            self._loop = None
+            self._started = True
+            return
         for _ in range(self.workers):
             self._tasks.append(self._loop.create_task(self._worker()))
         self._started = True
@@ -59,12 +65,20 @@ class JobQueue:
         self._started = False
 
     async def submit(self, func: Callable[..., Awaitable[Any]], *args, **kwargs) -> Job:
-        loop = asyncio.get_event_loop()
+        if not self._started:
+            # Test or lazy-init: start now against the current loop.
+            self.start()
+        loop = asyncio.get_running_loop()
         future: asyncio.Future = loop.create_future()
         job_id = f"job_{uuid.uuid4().hex[:10]}"
         job = Job(id=job_id, status=JobStatus.PENDING)
         self._jobs[job_id] = job
         self._futures[job_id] = future
+        # Spin up workers if not started.
+        if not self._tasks:
+            for _ in range(self.workers):
+                self._tasks.append(loop.create_task(self._worker()))
+                self._loop = loop
         await self._q.put((job_id, func, args, kwargs, future))
         return job
 

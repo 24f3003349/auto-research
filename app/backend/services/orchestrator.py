@@ -39,30 +39,41 @@ class Orchestrator:
         self.runs = RunRepo(db)
         self.wiki = WikiService(db)
 
-    async def start_run(self, topic: str, objective: str) -> OrchestratorResult:
-        run = self.runs.create_run(topic=topic, objective=objective)
+    async def start_run(
+        self,
+        topic: str,
+        objective: str,
+        run_id: str | None = None,
+    ) -> OrchestratorResult:
+        if run_id is None:
+            run = self.runs.create_run(topic=topic, objective=objective)
+            run_id = run.id
+        else:
+            run = self.runs.get_run(run_id)
+            if run is None:
+                raise ValueError(f"unknown run_id: {run_id}")
         await self._publish(
             "run.started",
-            run_id=run.id,
+            run_id=run_id,
             topic=topic,
             objective=objective,
         )
-        self.runs.update_status(run.id, "running")
+        self.runs.update_status(run_id, "running")
 
         def hook(evt: dict) -> None:
             # Engine calls the hook synchronously; persist + schedule bus fanout.
-            self._persist_agent_event_sync(run.id, evt)
+            self._persist_agent_event_sync(run_id, evt)
             asyncio.create_task(self.bus.publish(evt))
 
         engine = ResearchEngine(provider=self.provider, hook=hook)
-        result = await engine.run(topic=topic, objective=objective, run_id=run.id)
+        result = await engine.run(topic=topic, objective=objective, run_id=run_id)
 
-        self.runs.record_metric(run_id=run.id, name="score", value=result.score)
-        self.runs.update_status(run.id, "completed")
+        self.runs.record_metric(run_id=run_id, name="score", value=result.score)
+        self.runs.update_status(run_id, "completed")
 
         pages = pages_from_run(
             self.wiki,
-            run_id=run.id,
+            run_id=run_id,
             topic=topic,
             steps=result.steps,
             finding=result.finding,
@@ -71,12 +82,12 @@ class Orchestrator:
         )
         await self._publish(
             "run.completed",
-            run_id=run.id,
+            run_id=run_id,
             score=result.score,
             wiki_pages=[p.id for p in pages],
         )
         return OrchestratorResult(
-            run_id=run.id,
+            run_id=run_id,
             topic=topic,
             objective=objective,
             score=result.score,
